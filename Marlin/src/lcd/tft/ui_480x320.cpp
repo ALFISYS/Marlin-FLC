@@ -311,6 +311,7 @@ void MarlinUI::draw_status_screen() {
   TERN_(TOUCH_SCREEN, touch.add_control(FEEDRATE, 96, y, 128, 32));
 
   // flow rate
+  #if HAS_EXTRUDERS
   tft.canvas(284, y, 128, 32);
   tft.set_background(COLOR_BACKGROUND);
   color = planner.flow_percentage[0] == 100 ? COLOR_RATE_100 : COLOR_RATE_ALTERED;
@@ -319,6 +320,7 @@ void MarlinUI::draw_status_screen() {
   tft_string.add('%');
   tft.add_text(36, tft_string.vcenter(30), color , tft_string);
   TERN_(TOUCH_SCREEN, touch.add_control(FLOWRATE, 284, y, 128, 32, active_extruder));
+  #endif
 
   #if ENABLED(TOUCH_SCREEN)
     add_control(404, y, menu_main, imgSettings);
@@ -646,7 +648,9 @@ static void drawAxisValue(const AxisEnum axis) {
     #if defined(Z_AXIS)
     case Z_AXIS: pos = motionAxisState.zValuePos; color = Z_BTN_COLOR; break;
     #endif
+    #if defined(E_AXIS)
     case E_AXIS: pos = motionAxisState.eValuePos; color = E_BTN_COLOR; break;
+    #endif
     default: return;
   }
   tft.canvas(pos.x, pos.y, BTN_WIDTH + X_MARGIN, BTN_HEIGHT);
@@ -658,10 +662,12 @@ static void drawAxisValue(const AxisEnum axis) {
 static void moveAxis(const AxisEnum axis, const int8_t direction) {
   quick_feedback();
 
+  #if defined(E_AXIS)
   if (axis == E_AXIS && thermalManager.tooColdToExtrude(motionAxisState.e_selection)) {
     drawMessage(F("Too cold"));
     return;
   }
+  #endif
 
   const float diff = motionAxisState.currentStepSize * direction;
 
@@ -737,8 +743,10 @@ static void moveAxis(const AxisEnum axis, const int8_t direction) {
   drawAxisValue(axis);
 }
 
+#if defined(E_AXIS)
 static void e_plus()  { moveAxis(E_AXIS, 1);  }
 static void e_minus() { moveAxis(E_AXIS, -1); }
+#endif
 static void x_minus() { moveAxis(X_AXIS, -1); }
 static void x_plus()  { moveAxis(X_AXIS, 1);  }
 static void y_plus()  { moveAxis(Y_AXIS, 1);  }
